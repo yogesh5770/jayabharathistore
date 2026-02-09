@@ -1,0 +1,3 @@
+<resources>
+    <!-- App name is managed via build flavors in build.gradle.kts -->
+</resources>

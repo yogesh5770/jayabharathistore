@@ -1,0 +1,184 @@
+{
+  "project_info": {
+    "project_number": "1041988108880",
+    "project_id": "jayabhararthi-st",
+    "storage_bucket": "jayabhararthi-st.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1041988108880:android:9a760606c8de5707160755",
+        "android_client_info": {
+          "package_name": "com.jayabharathistore.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1041988108880-rin7ar31ncr800ggf7unrgffnh9us8dd.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCMBd6qBt9_7ZydFGoSoToOj2ol_sTbJYo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1041988108880-rin7ar31ncr800ggf7unrgffnh9us8dd.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1041988108880:android:39a4ba20460c16f0160755",
+        "android_client_info": {
+          "package_name": "com.jayabharathistore.app.admin"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1041988108880-rin7ar31ncr800ggf7unrgffnh9us8dd.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCMBd6qBt9_7ZydFGoSoToOj2ol_sTbJYo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1041988108880-rin7ar31ncr800ggf7unrgffnh9us8dd.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1041988108880:android:7495fcd84dae7003160755",
+        "android_client_info": {
+          "package_name": "com.jayabharathistore.app.creator"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1041988108880-rin7ar31ncr800ggf7unrgffnh9us8dd.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCMBd6qBt9_7ZydFGoSoToOj2ol_sTbJYo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1041988108880-rin7ar31ncr800ggf7unrgffnh9us8dd.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1041988108880:android:a7401f9432472b3d160755",
+        "android_client_info": {
+          "package_name": "com.jayabharathistore.app.customer"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1041988108880-rin7ar31ncr800ggf7unrgffnh9us8dd.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCMBd6qBt9_7ZydFGoSoToOj2ol_sTbJYo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1041988108880-rin7ar31ncr800ggf7unrgffnh9us8dd.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1041988108880:android:24e96fb45184b5a0160755",
+        "android_client_info": {
+          "package_name": "com.jayabharathistore.app.delivery"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1041988108880-rin7ar31ncr800ggf7unrgffnh9us8dd.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCMBd6qBt9_7ZydFGoSoToOj2ol_sTbJYo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1041988108880-rin7ar31ncr800ggf7unrgffnh9us8dd.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1041988108880:android:fd566bba39aa9545160755",
+        "android_client_info": {
+          "package_name": "com.jayabharathistore.app.store"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1041988108880-rin7ar31ncr800ggf7unrgffnh9us8dd.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCMBd6qBt9_7ZydFGoSoToOj2ol_sTbJYo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1041988108880-rin7ar31ncr800ggf7unrgffnh9us8dd.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
