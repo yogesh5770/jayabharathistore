@@ -143,12 +143,16 @@ class StoreOnboardingViewModel @Inject constructor(
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                // Check for duplicate store before starting upload
-                val alreadyHasStore = storeRepository.getStoreByOwnerId(user.uid)
+                // Check for duplicate store by Owner ID or Email
+                val storeByOwner = storeRepository.getStoreByOwnerId(user.uid)
+                val storeByEmail = storeRepository.getStoreByEmail(user.email ?: "")
+                
+                val alreadyHasStore = storeByOwner ?: storeByEmail
+                
                 if (alreadyHasStore != null) {
                     _existingStore.value = alreadyHasStore
                     _onboardingStatus.value = OnboardingStatus.StoreCreated(alreadyHasStore)
-                    _uiEvent.emit("You already have a store registered!")
+                    _uiEvent.emit("A store is already registered with your account or email!")
                     return@launch
                 }
                 // 1. Upload Assets

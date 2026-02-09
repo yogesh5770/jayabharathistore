@@ -29,6 +29,16 @@ class StoreRepository @Inject constructor(
         }
     }
 
+    suspend fun getStoreByEmail(email: String): StoreProfile? {
+        if (email.isBlank()) return null
+        return try {
+            val snapshot = storesCollection.whereEqualTo("email", email).get().await()
+            snapshot.toObjects(StoreProfile::class.java).firstOrNull()
+        } catch (e: Exception) {
+            null
+        }
+    }
+
     suspend fun getStoreByOwnerId(ownerId: String): StoreProfile? {
         return try {
             val snapshot = storesCollection.whereEqualTo("ownerId", ownerId).get().await()
