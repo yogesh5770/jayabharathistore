@@ -3,6 +3,7 @@ package com.jayabharathistore.app.data.repository
 import com.google.firebase.firestore.FirebaseFirestore
 import com.jayabharathistore.app.data.model.User
 import kotlinx.coroutines.tasks.await
+import com.jayabharathistore.app.data.util.StoreConfig
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.channels.awaitClose
@@ -10,16 +11,65 @@ import kotlinx.coroutines.flow.callbackFlow
 
 @Singleton
 class UserRepository @Inject constructor(
-    private val firestore: FirebaseFirestore
+    private val firestore: FirebaseFirestore,
+    private val storeConfig: StoreConfig
 ) {
     private val usersCollection = firestore.collection("users")
+    private val storesCollection = firestore.collection("stores")
 
     suspend fun saveUser(user: User) {
         try {
+            // Save global profile
             usersCollection.document(user.id).set(user).await()
+            
+            // If the user has a role and storeId, also save/update their membership
+            if (user.storeId.isNotEmpty() && user.role != "user") {
+                saveStoreMember(user.storeId, user.id, user.role, user.approvalStatus)
+            }
         } catch (e: Exception) {
             e.printStackTrace()
             throw e
+        }
+    }
+
+    suspend fun saveStoreMember(storeId: String, userId: String, role: String, status: String = "APPROVED") {
+        try {
+            storesCollection.document(storeId)
+                .collection("members")
+                .document(userId)
+                .set(mapOf(
+                    "role" to role,
+                    "status" to status,
+                    "updatedAt" to System.currentTimeMillis()
+                )).await()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    suspend fun getStoreMemberRole(storeId: String, userId: String): String? {
+        return try {
+            val doc = storesCollection.document(storeId)
+                .collection("members")
+                .document(userId)
+                .get()
+                .await()
+            doc.getString("role")
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    suspend fun getStoreMemberStatus(storeId: String, userId: String): String? {
+        return try {
+            val doc = storesCollection.document(storeId)
+                .collection("members")
+                .document(userId)
+                .get()
+                .await()
+            doc.getString("status")
+        } catch (e: Exception) {
+            null
         }
     }
 
@@ -33,11 +83,29 @@ class UserRepository @Inject constructor(
 
     suspend fun getAllUsers(): List<User> {
         return try {
-            usersCollection
-                .orderBy("createdAt", com.google.firebase.firestore.Query.Direction.DESCENDING)
-                .get()
-                .await()
-                .toObjects(User::class.java)
+            val targetStoreId = storeConfig.getTargetStoreId()
+            if (targetStoreId != null) {
+                // If in a specific store app, we only care about members of this store
+                val members = storesCollection.document(targetStoreId)
+                    .collection("members")
+                    .get()
+                    .await()
+                
+                val userIds = members.documents.map { it.id }
+                if (userIds.isEmpty()) return emptyList()
+
+                usersCollection
+                    .whereIn("id", userIds)
+                    .get()
+                    .await()
+                    .toObjects(User::class.java)
+            } else {
+                usersCollection
+                    .orderBy("createdAt", com.google.firebase.firestore.Query.Direction.DESCENDING)
+                    .get()
+                    .await()
+                    .toObjects(User::class.java)
+            }
         } catch (e: Exception) {
             emptyList()
         }
@@ -62,27 +130,45 @@ class UserRepository @Inject constructor(
         }
     }
 
-    suspend fun getAvailableDeliveryPartners(): List<User> {
+    suspend fun getAvailableDeliveryPartners(storeId: String): List<User> {
         return try {
-            usersCollection
+            val members = storesCollection.document(storeId)
+                .collection("members")
                 .whereEqualTo("role", "delivery")
-                .whereEqualTo("isOnline", true)
-                .whereEqualTo("isBusy", false)
-                .whereEqualTo("approvalStatus", "APPROVED") // Only approved partners
+                .whereEqualTo("status", "APPROVED")
                 .get()
                 .await()
-                .toObjects(User::class.java)
+            
+            val userIds = members.documents.map { it.id }
+            if (userIds.isEmpty()) return emptyList()
+
+            // Fetch actual user details for these members
+            val userDocs = usersCollection
+                .whereIn("id", userIds)
+                .get()
+                .await()
+            
+            userDocs.toObjects(User::class.java).filter { it.isOnline && !it.isBusy }
         } catch (e: Exception) {
             e.printStackTrace()
             emptyList()
         }
     }
 
-    suspend fun getPendingDeliveryPartners(): List<User> {
+    suspend fun getPendingDeliveryPartners(storeId: String): List<User> {
         return try {
-            usersCollection
+            val members = storesCollection.document(storeId)
+                .collection("members")
                 .whereEqualTo("role", "delivery")
-                .whereEqualTo("approvalStatus", "PENDING")
+                .whereEqualTo("status", "PENDING")
+                .get()
+                .await()
+            
+            val userIds = members.documents.map { it.id }
+            if (userIds.isEmpty()) return emptyList()
+
+            usersCollection
+                .whereIn("id", userIds)
                 .get()
                 .await()
                 .toObjects(User::class.java)

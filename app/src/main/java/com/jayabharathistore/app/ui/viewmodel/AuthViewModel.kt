@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.combine
+import com.jayabharathistore.app.data.util.StoreConfig
 import javax.inject.Inject
 import com.google.firebase.messaging.FirebaseMessaging
 
@@ -18,7 +19,8 @@ import com.google.firebase.messaging.FirebaseMessaging
 class AuthViewModel @Inject constructor(
     private val authRepository: AuthRepository,
     private val sessionManager: UserSessionManager,
-    private val userRepository: com.jayabharathistore.app.data.repository.UserRepository
+    private val userRepository: com.jayabharathistore.app.data.repository.UserRepository,
+    private val storeConfig: StoreConfig
 ) : ViewModel() {
 
     // Combine Firebase auth state with session state
@@ -70,10 +72,11 @@ class AuthViewModel @Inject constructor(
                 if (result.isSuccess) {
                     val user = result.getOrNull()
                     if (user != null) {
-                        // Check if user exists in Firestore, if not create them
+                        val targetStoreId = storeConfig.getTargetStoreId()
                         val firestoreUser = userRepository.getUser(user.uid)
+                        
+                        // 1. Ensure global user profile exists
                         if (firestoreUser == null) {
-                            // User doesn't exist in Firestore, save them
                             val newUser = com.jayabharathistore.app.data.model.User(
                                 id = user.uid,
                                 name = user.displayName ?: "",
@@ -82,15 +85,27 @@ class AuthViewModel @Inject constructor(
                             )
                             userRepository.saveUser(newUser)
                         }
+
+                        // 2. Resolve Role for this Store
+                        if (targetStoreId != null) {
+                            // In a white-labeled app, users are customers by default if no other membership exists
+                            val existingRole = userRepository.getStoreMemberRole(targetStoreId, user.uid)
+                            if (existingRole == null) {
+                                // First time in this specific store app -> Make them a customer of this store
+                                userRepository.saveStoreMember(targetStoreId, user.uid, "user")
+                            }
+                        }
                         
                         sessionManager.loginUser(user, firestoreUser?.name, firestoreUser?.phoneNumber)
-                        // subscribe to user-specific topic for notifications
                         try {
                             FirebaseMessaging.getInstance().subscribeToTopic("user-${user.uid}")
-                        } catch (_: Exception) {
-                        }
+                            if (targetStoreId != null) {
+                                FirebaseMessaging.getInstance().subscribeToTopic("store-$targetStoreId")
+                            }
+                        } catch (_: Exception) { }
                     }
-                } else {
+                }
+ else {
                     _errorMessage.value = result.exceptionOrNull()?.message ?: "Login failed"
                 }
             } catch (e: Exception) {
@@ -107,32 +122,26 @@ class AuthViewModel @Inject constructor(
             _errorMessage.value = null
             
             try {
-                // First try standard Firebase login
+                val targetStoreId = storeConfig.getTargetStoreId()
+                if (targetStoreId == null) {
+                    _errorMessage.value = "This app is not configured for a specific store."
+                    return@launch
+                }
+
                 val result = authRepository.signIn(email, password)
                 if (result.isSuccess) {
                     val user = result.getOrNull()
                     if (user != null) {
-                        // Check if this user has delivery role
                         val firestoreUser = userRepository.getUser(user.uid)
+                        val memberRole = userRepository.getStoreMemberRole(targetStoreId, user.uid)
+                        val memberStatus = userRepository.getStoreMemberStatus(targetStoreId, user.uid)
                         
-                        if (firestoreUser != null) {
-                            if (firestoreUser.role == "delivery") {
-                                // Already a delivery partner
-                                sessionManager.loginUser(user, firestoreUser.name, firestoreUser.phoneNumber)
-                            } else {
-                                // Existing customer logging into Delivery App -> Upgrade them
-                                // We keep their existing profile info but add delivery capability
-                                val pendingUser = firestoreUser.copy(
-                                    role = "delivery",
-                                    approvalStatus = "PENDING"
-                                )
-                                userRepository.saveUser(pendingUser)
-                                sessionManager.loginUser(user, pendingUser.name, pendingUser.phoneNumber)
-                            }
+                        if (memberRole == "delivery") {
+                            sessionManager.loginUser(user, firestoreUser?.name, firestoreUser?.phoneNumber)
                         } else {
-                            // User authenticated but no firestore record? 
-                            // This shouldn't happen for a legitimate new signup, but as a fallback:
-                            _errorMessage.value = "Registration mandatory. Please use the Sign Up tab to register as a partner."
+                            // User exists but is not a delivery partner for THIS store -> Invite to join
+                            // We don't upgrade automatically on sign-in, the user should use sign-up to register as staff
+                             _errorMessage.value = "You are not a delivery partner for this store. Please register using the Sign Up tab."
                         }
                     }
                 } else {
@@ -140,7 +149,8 @@ class AuthViewModel @Inject constructor(
                 }
             } catch (e: Exception) {
                 _errorMessage.value = e.message ?: "Delivery Login failed"
-            } finally {
+            }
+ finally {
                 _isLoading.value = false
             }
         }
@@ -186,72 +196,56 @@ class AuthViewModel @Inject constructor(
             _isLoading.value = true
             _errorMessage.value = null
             try {
+                val targetStoreId = storeConfig.getTargetStoreId()
+                if (targetStoreId == null) {
+                    _errorMessage.value = "Configuration error: Target Store not found."
+                    return@launch
+                }
+
                 val result = authRepository.signUp(email, password)
                 if (result.isSuccess) {
                     val firebaseUser = result.getOrNull()
                     if (firebaseUser != null) {
-                        // New user: Save details to Firestore with delivery role and pending status
+                        // 1. Global Profile
                         val newUser = com.jayabharathistore.app.data.model.User(
                             id = firebaseUser.uid,
                             name = name,
                             email = email,
                             phoneNumber = phone,
-                            role = "delivery",
-                            approvalStatus = "PENDING"
+                            storeId = targetStoreId // Track where they first registered
                         )
                         userRepository.saveUser(newUser)
+                        
+                        // 2. Store Membership (Delivery)
+                        userRepository.saveStoreMember(targetStoreId, firebaseUser.uid, "delivery", "PENDING")
                         
                         sessionManager.loginUser(firebaseUser, name, phone)
                     }
                 } else {
-                    // Check if error is "email already in use"
                     val exception = result.exceptionOrNull()
                     val msg = exception?.message ?: ""
                     
-                    if (msg.contains("email address is already in use", ignoreCase = true) || 
-                        msg.contains("exists", ignoreCase = true)) {
-                        
-                        // Attempt to sign in and upgrade the user
+                    if (msg.contains("email address is already in use", ignoreCase = true)) {
+                        // User exists as customer in some store -> Add delivery role for THIS store
                         val signInResult = authRepository.signIn(email, password)
                         if (signInResult.isSuccess) {
-                            val user = signInResult.getOrNull()
-                            if (user != null) {
-                                // Fetch existing user
-                                val existingUser = userRepository.getUser(user.uid)
-                                
-                                val updatedUser = if (existingUser != null) {
-                                    existingUser.copy(
-                                        role = "delivery",
-                                        approvalStatus = "PENDING",
-                                        phoneNumber = if (phone.isNotBlank()) phone else existingUser.phoneNumber,
-                                        name = if (name.isNotBlank()) name else existingUser.name
-                                    )
-                                } else {
-                                    com.jayabharathistore.app.data.model.User(
-                                        id = user.uid,
-                                        name = name,
-                                        email = email,
-                                        phoneNumber = phone,
-                                        role = "delivery",
-                                        approvalStatus = "PENDING"
-                                    )
-                                }
-                                
-                                userRepository.saveUser(updatedUser)
-                                sessionManager.loginUser(user, updatedUser.name, updatedUser.phoneNumber)
-                            }
+                            val user = signInResult.getOrNull() ?: return@launch
+                            val existingUser = userRepository.getUser(user.uid)
+                            
+                            // Keep global profile but add membership
+                            userRepository.saveStoreMember(targetStoreId, user.uid, "delivery", "PENDING")
+                            sessionManager.loginUser(user, existingUser?.name ?: name, existingUser?.phoneNumber ?: phone)
                         } else {
-                            // Password didn't match or other login error
-                            _errorMessage.value = "You already have a customer account. Please use the LOG IN tab with your existing password to join as a Delivery Partner."
-                            _isLoginMode.value = true // Switch UI to login mode for them
+                            _errorMessage.value = "Email already exists. Use LOG IN with your password to join this store as a partner."
                         }
                     } else {
-                        _errorMessage.value = msg.ifBlank { "Sign up failed" }
+                        _errorMessage.value = msg
                     }
                 }
             } catch (e: Exception) {
                 _errorMessage.value = e.message ?: "Sign up failed"
-            } finally {
+            }
+ finally {
                 _isLoading.value = false
             }
         }
