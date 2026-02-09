@@ -51,17 +51,25 @@ class StoreRepository @Inject constructor(
     }
 
     suspend fun updateStoreStatus(storeId: String, status: String) {
-        storesCollection.document(storeId).update("approvalStatus", status).await()
+        try {
+            storesCollection.document(storeId).update("approvalStatus", status).await()
+        } catch (e: Exception) {
+            e.printStackTrace() // Log error but don't crash the app
+        }
     }
 
     suspend fun approveStoreWithLinks(storeId: String, userUrl: String, deliveryUrl: String, storeUrl: String) {
-        storesCollection.document(storeId).update(
-            mapOf(
-                "approvalStatus" to "APPROVED",
-                "userAppDownloadUrl" to userUrl,
-                "deliveryAppDownloadUrl" to deliveryUrl,
-                "storeAppDownloadUrl" to storeUrl
-            )
-        ).await()
+        try {
+            storesCollection.document(storeId).update(
+                mapOf(
+                    "approvalStatus" to "APPROVED",
+                    "userAppDownloadUrl" to userUrl,
+                    "deliveryAppDownloadUrl" to deliveryUrl,
+                    "storeAppDownloadUrl" to storeUrl
+                )
+            ).await()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 }
