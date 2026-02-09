@@ -229,9 +229,18 @@ class UserRepository @Inject constructor(
         awaitClose { listener.remove() }
     }
 
-    fun observeDeliveryPartners(): kotlinx.coroutines.flow.Flow<List<User>> = callbackFlow {
-        val listener = usersCollection.whereEqualTo("role", "delivery")
-            .addSnapshotListener { snapshot, error ->
+    fun observeDeliveryPartners(storeId: String? = null): kotlinx.coroutines.flow.Flow<List<User>> = callbackFlow {
+        val query = if (storeId != null) {
+            // In white-label mode, we could either observe the global users with a filter
+            // OR observe the store's members subcollection. 
+            // For real-time online/busy status, global users with whereEqualTo("storeId", storeId) 
+            // is easiest if we update storeId on the user profile during association.
+            usersCollection.whereEqualTo("role", "delivery").whereEqualTo("storeId", storeId)
+        } else {
+            usersCollection.whereEqualTo("role", "delivery")
+        }
+
+        val listener = query.addSnapshotListener { snapshot, error ->
                 if (error != null) {
                     close(error)
                     return@addSnapshotListener

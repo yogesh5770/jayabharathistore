@@ -124,7 +124,7 @@ class CheckoutViewModel @Inject constructor(
                     val orderId = ordersRepository.createOrder(orderWithCodStatus)
                     
                     // AUTO ASSIGNMENT for COD
-                    autoAssignDeliveryPartner(orderId)
+                    autoAssignDeliveryPartner(orderId, storeId)
                     
                     cartRepository.clearCart()
                     _orderPlacedId.value = orderId
@@ -241,10 +241,10 @@ class CheckoutViewModel @Inject constructor(
         }
     }
 
-    private suspend fun autoAssignDeliveryPartner(orderId: String) {
+    private suspend fun autoAssignDeliveryPartner(orderId: String, storeId: String) {
         try {
             // Fetch online, approved, and not busy partners
-            val availablePartners = userRepository.getAvailableDeliveryPartners()
+            val availablePartners = userRepository.getAvailableDeliveryPartners(storeId)
             
             if (availablePartners.isNotEmpty()) {
                 // Pick one randomly

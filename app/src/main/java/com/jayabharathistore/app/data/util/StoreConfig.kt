@@ -2,14 +2,8 @@ package com.jayabharathistore.app.data.util
 
 import android.content.Context
 import com.jayabharathistore.app.R
-import dagger.hilt.android.qualifiers.ApplicationContext
-import javax.inject.Inject
-import javax.inject.Singleton
 
-@Singleton
-class StoreConfig @Inject constructor(
-    @ApplicationContext private val context: Context
-) {
+class StoreConfig(private val context: Context) {
     /**
      * returns the Store ID if this is a white-labeled build.
      * The ID is injected by the build script into res/values/config.xml

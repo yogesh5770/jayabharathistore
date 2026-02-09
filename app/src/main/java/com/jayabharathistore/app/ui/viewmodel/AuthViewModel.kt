@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.combine
+import com.jayabharathistore.app.data.repository.UserRepository
 import com.jayabharathistore.app.data.util.StoreConfig
 import javax.inject.Inject
 import com.google.firebase.messaging.FirebaseMessaging
@@ -19,7 +20,7 @@ import com.google.firebase.messaging.FirebaseMessaging
 class AuthViewModel @Inject constructor(
     private val authRepository: AuthRepository,
     private val sessionManager: UserSessionManager,
-    private val userRepository: com.jayabharathistore.app.data.repository.UserRepository,
+    private val userRepository: UserRepository,
     private val storeConfig: StoreConfig
 ) : ViewModel() {
 
@@ -134,7 +135,6 @@ class AuthViewModel @Inject constructor(
                     if (user != null) {
                         val firestoreUser = userRepository.getUser(user.uid)
                         val memberRole = userRepository.getStoreMemberRole(targetStoreId, user.uid)
-                        val memberStatus = userRepository.getStoreMemberStatus(targetStoreId, user.uid)
                         
                         if (memberRole == "delivery") {
                             sessionManager.loginUser(user, firestoreUser?.name, firestoreUser?.phoneNumber)

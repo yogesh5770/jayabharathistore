@@ -10,10 +10,13 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+import com.jayabharathistore.app.data.util.StoreConfig
+
 @HiltViewModel
 class ShopViewModel @Inject constructor(
     private val shopRepository: ShopRepository,
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val storeConfig: StoreConfig
 ) : ViewModel() {
 
     private val _shopSettings = MutableStateFlow(ShopSettings())
@@ -54,8 +57,9 @@ class ShopViewModel @Inject constructor(
 
     private fun observeFleet() {
         viewModelScope.launch {
+            val storeId = storeConfig.getTargetStoreId()
             // HIGH-SPEED: Only observe delivery partners, not all users
-            userRepository.observeDeliveryPartners().collect { partners ->
+            userRepository.observeDeliveryPartners(storeId).collect { partners ->
                 // Filtering only for approval status now (role is already filtered by DB query)
                 val approvedPartners = partners.filter { 
                     it.approvalStatus.trim().uppercase() == "APPROVED"

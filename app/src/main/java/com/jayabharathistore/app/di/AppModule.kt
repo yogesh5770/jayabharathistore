@@ -6,6 +6,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 
 import com.jayabharathistore.app.data.session.CartManager
 import com.jayabharathistore.app.data.session.UserSessionManager
+import com.jayabharathistore.app.data.util.StoreConfig
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -20,6 +21,12 @@ object AppModule {
     @Provides
     @Singleton
     fun provideFirebaseAuth(): FirebaseAuth = FirebaseAuth.getInstance()
+
+    @Provides
+    @Singleton
+    fun provideStoreConfig(@ApplicationContext context: Context): StoreConfig {
+        return StoreConfig(context)
+    }
 
     @Provides
     @Singleton
