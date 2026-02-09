@@ -130,6 +130,12 @@ def upload_and_update(store_id, db, bucket):
             print(f"Failed to create release: {rel_resp.text}")
             return
         
+        # Update Firestore early to 'APPROVED' so user isn't stuck waiting
+        if db:
+            print(f"Updating Firestore status to APPROVED for: {store_id}...")
+            db.collection("stores").document(store_id).update({"approvalStatus": "APPROVED"})
+            print("Status updated to APPROVED. Proceeding with uploads...")
+
         release_id = rel_resp.json()["id"]
         upload_url_template = rel_resp.json()["upload_url"].split("{")[0]
 
@@ -139,7 +145,7 @@ def upload_and_update(store_id, db, bucket):
             "store": "storeAppDownloadUrl"
         }
         
-        updates = {"approvalStatus": "APPROVED"}
+        updates = {}
         
         for flavor, field in flavors.items():
             apk_path = os.path.join(PROJECT_ROOT, f"app/build/outputs/apk/{flavor}/debug/app-{flavor}-debug.apk")
@@ -158,14 +164,10 @@ def upload_and_update(store_id, db, bucket):
                     print(f"SUCCESS: Uploaded {flavor} to GitHub: {download_url}")
                 else:
                     print(f"FAILED: Could not upload {flavor} to GitHub. Status: {upload_resp.status_code}")
-                    print(f"Response: {upload_resp.text}")
 
-        if db:
-            print(f"Updating Firestore document: {store_id}...")
+        if db and updates:
             db.collection("stores").document(store_id).update(updates)
-            print("SUCCESS: Firestore updated with GitHub download links.")
-        else:
-            print("WARNING: Firestore client not initialized. Skipping DB update.")
+            print("Firestore links updated.")
             
     except Exception as e:
         print(f"CRITICAL ERROR during GitHub upload or Firestore update: {e}")
