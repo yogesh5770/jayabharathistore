@@ -80,28 +80,73 @@ def run_gradle_build():
         return False
 
 def upload_and_update(store_id, db, bucket):
-    print(f"--- Uploading APKs for Store: {store_id} ---")
+    print(f"--- Uploading APKs for Store: {store_id} to GitHub Releases ---")
     
-    flavors = {
-        "customer": "userAppDownloadUrl",
-        "delivery": "deliveryAppDownloadUrl",
-        "store": "storeAppDownloadUrl"
+    github_token = os.environ.get("GITHUB_TOKEN")
+    repo = os.environ.get("GITHUB_REPOSITORY") # Automatically set by Actions
+    
+    if not github_token or not repo:
+        print("GITHUB_TOKEN or REPO not found. Falling back to local logging.")
+        return
+
+    # 1. Create a Tag/Release name
+    tag_name = f"build-{store_id}-{int(os.path.getmtime(RES_PATH))}"
+    
+    # 2. Create Release via GitHub API
+    headers = {
+        "Authorization": f"token {github_token}",
+        "Accept": "application/vnd.github.v3+json"
     }
     
-    updates = {"approvalStatus": "APPROVED"}
+    release_data = {
+        "tag_name": tag_name,
+        "name": f"Build for Store {store_id}",
+        "body": f"Automated white-label build for {store_id}",
+        "draft": False,
+        "prerelease": False
+    }
     
-    for flavor, field in flavors.items():
-        apk_path = os.path.join(PROJECT_ROOT, f"app/build/outputs/apk/{flavor}/debug/app-{flavor}-debug.apk")
-        if os.path.exists(apk_path):
-            blob = bucket.blob(f"apks/{store_id}/{flavor}.apk")
-            blob.upload_from_filename(apk_path)
-            blob.make_public()
-            updates[field] = blob.public_url
-            print(f"Uploaded {flavor} APK: {blob.public_url}")
-    
-    if db:
-        db.collection("stores").document(store_id).update(updates)
-        print("Firestore updated with APK links.")
+    try:
+        rel_resp = requests.post(f"https://api.github.com/repos/{repo}/releases", json=release_data, headers=headers)
+        if rel_resp.status_code != 201:
+            print(f"Failed to create release: {rel_resp.text}")
+            return
+        
+        release_id = rel_resp.json()["id"]
+        upload_url_template = rel_resp.json()["upload_url"].split("{")[0]
+
+        flavors = {
+            "customer": "userAppDownloadUrl",
+            "delivery": "deliveryAppDownloadUrl",
+            "store": "storeAppDownloadUrl"
+        }
+        
+        updates = {"approvalStatus": "APPROVED"}
+        
+        for flavor, field in flavors.items():
+            apk_path = os.path.join(PROJECT_ROOT, f"app/build/outputs/apk/{flavor}/debug/app-{flavor}-debug.apk")
+            if os.path.exists(apk_path):
+                file_name = f"{flavor}-{store_id}.apk"
+                with open(apk_path, "rb") as f:
+                    upload_resp = requests.post(
+                        f"{upload_url_template}?name={file_name}",
+                        data=f,
+                        headers={**headers, "Content-Type": "application/vnd.android.package-archive"}
+                    )
+                
+                if upload_resp.status_code == 201:
+                    download_url = upload_resp.json()["browser_download_url"]
+                    updates[field] = download_url
+                    print(f"Uploaded {flavor} to GitHub: {download_url}")
+                else:
+                    print(f"Failed to upload {flavor}: {upload_resp.text}")
+
+        if db:
+            db.collection("stores").document(store_id).update(updates)
+            print("Firestore updated with GitHub download links.")
+            
+    except Exception as e:
+        print(f"Error during GitHub upload: {e}")
 
 def main():
     import sys

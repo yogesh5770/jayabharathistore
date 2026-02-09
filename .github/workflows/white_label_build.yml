@@ -43,6 +43,7 @@ jobs:
     - name: Run White-Label Factory Script
       env:
         FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         STORE_ID: ${{ github.event.inputs.store_id || github.event.client_payload.store_id }}
         STORE_NAME: ${{ github.event.inputs.store_name || github.event.client_payload.store_name }}
         ICON_URL: ${{ github.event.inputs.icon_url || github.event.client_payload.icon_url }}
