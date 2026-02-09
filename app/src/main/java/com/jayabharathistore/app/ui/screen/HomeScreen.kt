@@ -238,7 +238,7 @@ fun HomeScreen(
                                 ProductCardModern(
                                     product = product,
                                     quantity = quantity,
-                                    onClick = { onProductClick(product) },
+                                    onClick = { /* No navigation - add/view directly from card */ },
                                     onIncrement = {
                                         if (quantity == 0) {
                                             cartViewModel.addToCart(product, 1)

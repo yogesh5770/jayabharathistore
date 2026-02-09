@@ -35,9 +35,6 @@ data class Product(
     @PropertyName("stockQuantity")
     val stockQuantity: Int = 0,
     
-    @PropertyName("unit")
-    val unit: String = "piece", // piece, kg, liter, etc.
-    
     @PropertyName("ownerId")
     val ownerId: String = "",
     

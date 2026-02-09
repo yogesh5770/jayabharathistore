@@ -26,8 +26,40 @@ class OrdersRepository @Inject constructor(
             ordersCollection.document()
         }
         val orderWithId = order.copy(id = newOrderRef.id)
+        
+        // Reduce stock for all items in the order
+        try {
+            order.items.forEach { item ->
+                reduceProductStock(item.productId, item.quantity)
+            }
+        } catch (e: Exception) {
+            // If stock reduction fails, throw error to prevent order creation
+            throw Exception("Failed to reserve stock: ${e.message}")
+        }
+        
         newOrderRef.set(orderWithId).await()
         return newOrderRef.id
+    }
+
+    private suspend fun reduceProductStock(productId: String, quantity: Int) {
+        val productRef = firestore.collection("products").document(productId)
+        firestore.runTransaction { transaction ->
+            val snapshot = transaction.get(productRef)
+            val currentStock = snapshot.getLong("stockQuantity")?.toInt() ?: 0
+            val productName = snapshot.getString("name") ?: "Product"
+            
+            // Check if sufficient stock is available
+            if (currentStock < quantity) {
+                throw Exception("Not enough stock! Only $currentStock piece(s) of '$productName' available, but you requested $quantity piece(s).")
+            }
+            
+            val newStock = currentStock - quantity
+            transaction.update(productRef, mapOf(
+                "stockQuantity" to newStock,
+                "inStock" to (newStock > 0),
+                "updatedAt" to System.currentTimeMillis()
+            ))
+        }.await()
     }
 
     suspend fun getAllOrders(): List<Order> {
@@ -106,7 +138,37 @@ class OrdersRepository @Inject constructor(
     }
 
     suspend fun updateOrderStatus(orderId: String, status: String) {
+        // If order is being cancelled, restore the stock
+        if (status == "CANCELLED" || status == "FAILED") {
+            restoreStockForOrder(orderId)
+        }
         ordersCollection.document(orderId).update("status", status).await()
+    }
+
+    private suspend fun restoreStockForOrder(orderId: String) {
+        try {
+            val order = getOrderById(orderId)
+            order?.items?.forEach { item ->
+                restoreProductStock(item.productId, item.quantity)
+            }
+        } catch (e: Exception) {
+            // Log error but don't block the status update
+        }
+    }
+
+    private suspend fun restoreProductStock(productId: String, quantity: Int) {
+        val productRef = firestore.collection("products").document(productId)
+        firestore.runTransaction { transaction ->
+            val snapshot = transaction.get(productRef)
+            val currentStock = snapshot.getLong("stockQuantity")?.toInt() ?: 0
+            val newStock = currentStock + quantity
+            
+            transaction.update(productRef, mapOf(
+                "stockQuantity" to newStock,
+                "inStock" to true,
+                "updatedAt" to System.currentTimeMillis()
+            ))
+        }.await()
     }
 
     suspend fun updateOrderFields(orderId: String, fields: Map<String, Any>) {

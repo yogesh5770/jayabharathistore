@@ -88,10 +88,7 @@ data class OrderItem(
     val price: Double = 0.0,
     
     @PropertyName("quantity")
-    val quantity: Int = 1,
-    
-    @PropertyName("unit")
-    val unit: String = "piece"
+    val quantity: Int = 1
 )
 
 

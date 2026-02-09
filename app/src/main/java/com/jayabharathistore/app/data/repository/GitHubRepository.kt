@@ -11,9 +11,9 @@ class GitHubRepository @Inject constructor(
     private val api: GitHubApi
 ) {
     // Configuration - Move these to build secrets or remote config in production
-    private val GITHUB_OWNER = "YOUR_GITHUB_USERNAME"
-    private val GITHUB_REPO = "YOUR_REPO_NAME"
-    private val GITHUB_TOKEN = "Bearer YOUR_PERSONAL_ACCESS_TOKEN"
+    private val GITHUB_OWNER = "yogesh5770"
+    private val GITHUB_REPO = "jayabharathistore"
+    private val GITHUB_TOKEN = "Bearer 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"
 
     suspend fun triggerBuild(store: StoreProfile): Boolean {
         return try {
