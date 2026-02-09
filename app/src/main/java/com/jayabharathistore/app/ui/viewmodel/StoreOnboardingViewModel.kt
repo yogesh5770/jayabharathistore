@@ -40,22 +40,27 @@ class StoreOnboardingViewModel @Inject constructor(
     private val _existingStore = MutableStateFlow<StoreProfile?>(null)
     val existingStore: StateFlow<StoreProfile?> = _existingStore.asStateFlow()
 
+    private var storeJob: kotlinx.coroutines.Job? = null
+
     init {
         viewModelScope.launch {
             authRepository.currentUser.collect { user ->
                 _currentUser.value = user
+                storeJob?.cancel()
                 if (user != null) {
-                    checkExistingStore(user.uid)
+                    storeJob = launch {
+                        storeRepository.getStoreByOwnerIdRealtime(user.uid).collect { store ->
+                            _existingStore.value = store
+                            if (store != null) {
+                                _onboardingStatus.value = OnboardingStatus.StoreCreated(store)
+                            }
+                        }
+                    }
+                } else {
+                    _existingStore.value = null
+                    _onboardingStatus.value = OnboardingStatus.Idle
                 }
             }
-        }
-    }
-
-    private suspend fun checkExistingStore(userId: String) {
-        val store = storeRepository.getStoreByOwnerId(userId)
-        _existingStore.value = store
-        if (store != null) {
-            _onboardingStatus.value = OnboardingStatus.StoreCreated(store)
         }
     }
 

@@ -38,6 +38,20 @@ class StoreRepository @Inject constructor(
         }
     }
 
+    fun getStoreByOwnerIdRealtime(ownerId: String): Flow<StoreProfile?> = callbackFlow {
+        val listener = storesCollection
+            .whereEqualTo("ownerId", ownerId)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    close(error)
+                    return@addSnapshotListener
+                }
+                val store = snapshot?.toObjects(StoreProfile::class.java)?.firstOrNull()
+                trySend(store)
+            }
+        awaitClose { listener.remove() }
+    }
+
     fun observeAllStores(): Flow<List<StoreProfile>> = callbackFlow {
         val listener = storesCollection.addSnapshotListener { snapshot, error ->
             if (error != null) {
