@@ -4,6 +4,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import com.jayabharathistore.app.data.model.Product
+import com.jayabharathistore.app.data.util.StoreConfig
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -14,14 +15,21 @@ import javax.inject.Singleton
 @Singleton
 class ProductRepository @Inject constructor(
     private val firestore: FirebaseFirestore,
-    private val auth: FirebaseAuth
+    private val auth: FirebaseAuth,
+    private val storeConfig: StoreConfig
 ) {
     private val productsCollection = firestore.collection("products")
 
     suspend fun getAllProducts(): List<Product> {
         return try {
-            productsCollection
-                .orderBy("createdAt", Query.Direction.DESCENDING)
+            val targetStoreId = storeConfig.getTargetStoreId()
+            val query = if (targetStoreId != null) {
+                productsCollection.whereEqualTo("storeId", targetStoreId)
+            } else {
+                productsCollection
+            }
+            
+            query.orderBy("createdAt", Query.Direction.DESCENDING)
                 .get()
                 .await()
                 .documents

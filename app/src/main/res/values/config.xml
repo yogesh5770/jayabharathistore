@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- target_store_id is used for white-labeled builds. 
+         Leaving it empty here means it's the general-purpose app. -->
+    <string name="target_store_id"></string>
+</resources>

@@ -4,6 +4,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import com.jayabharathistore.app.data.model.Order
+import com.jayabharathistore.app.data.util.StoreConfig
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -15,7 +16,8 @@ import kotlin.math.*
 @Singleton
 class OrdersRepository @Inject constructor(
     private val firestore: FirebaseFirestore,
-    private val auth: FirebaseAuth
+    private val auth: FirebaseAuth,
+    private val storeConfig: StoreConfig
 ) {
     private val ordersCollection = firestore.collection("orders")
 
@@ -64,8 +66,14 @@ class OrdersRepository @Inject constructor(
 
     suspend fun getAllOrders(): List<Order> {
         return try {
-            ordersCollection
-                .orderBy("createdAt", Query.Direction.DESCENDING)
+            val targetStoreId = storeConfig.getTargetStoreId()
+            val query = if (targetStoreId != null) {
+                ordersCollection.whereEqualTo("storeId", targetStoreId)
+            } else {
+                ordersCollection
+            }
+
+            query.orderBy("createdAt", Query.Direction.DESCENDING)
                 .get()
                 .await()
                 .toObjects(Order::class.java)
@@ -109,8 +117,14 @@ class OrdersRepository @Inject constructor(
     }
 
     fun observeAllOrders(): Flow<List<Order>> = callbackFlow {
-        val listener = ordersCollection
-            .orderBy("createdAt", Query.Direction.DESCENDING)
+        val targetStoreId = storeConfig.getTargetStoreId()
+        val query = if (targetStoreId != null) {
+            ordersCollection.whereEqualTo("storeId", targetStoreId)
+        } else {
+            ordersCollection
+        }
+
+        val listener = query.orderBy("createdAt", Query.Direction.DESCENDING)
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
                     close(error)

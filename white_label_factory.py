@@ -33,6 +33,21 @@ def init_firebase():
         print(f"ERROR: Failed to initialize Firebase: {e}")
         return None, None
 
+def update_app_config(store_id):
+    print(f"--- Injecting Store ID: {store_id} into config.xml ---")
+    config_dir = os.path.join(RES_PATH, "values")
+    if not os.path.exists(config_dir):
+        os.makedirs(config_dir)
+    
+    config_path = os.path.join(config_dir, "config.xml")
+    config_content = f"""<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="target_store_id">{store_id}</string>
+</resources>
+"""
+    with open(config_path, "w", encoding="utf-8") as f:
+        f.write(config_content)
+
 def update_app_name(app_name):
     if not app_name:
         return
@@ -161,6 +176,9 @@ def main():
     store_app_name = sys.argv[6] if len(sys.argv) > 6 and sys.argv[6] else f"Store Manager {store_name}"
 
     db, bucket = init_firebase()
+    
+    # Inject Store ID for white-labeling
+    update_app_config(store_id)
     
     # Update branding (Icons are global for now, but we can specialize later if needed)
     # We update icons first
