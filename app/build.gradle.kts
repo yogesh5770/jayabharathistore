@@ -39,19 +39,19 @@ android {
             dimension = "version"
             applicationIdSuffix = ".customer"
             versionNameSuffix = "-customer"
-            resValue("string", "app_name", "Jayabharathi Store")
+            resValue("string", "app_name", "@string/app_name")
         }
         create("store") {
             dimension = "version"
             applicationIdSuffix = ".store"
             versionNameSuffix = "-store"
-            resValue("string", "app_name", "JB Store Manager")
+            resValue("string", "app_name", "@string/app_name")
         }
         create("delivery") {
             dimension = "version"
             applicationIdSuffix = ".delivery"
             versionNameSuffix = "-delivery"
-            resValue("string", "app_name", "JB Delivery")
+            resValue("string", "app_name", "@string/app_name")
         }
         create("creator") {
             dimension = "version"

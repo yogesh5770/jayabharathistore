@@ -14,6 +14,15 @@ on:
       icon_url:
         description: 'Custom Icon URL'
         required: true
+      user_app_name:
+        description: 'User App Name'
+        required: false
+      delivery_app_name:
+        description: 'Delivery App Name'
+        required: false
+      store_app_name:
+        description: 'Store App Name'
+        required: false
 
 permissions:
   contents: write
@@ -54,9 +63,12 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         STORE_ID: ${{ github.event.inputs.store_id || github.event.client_payload.store_id }}
         STORE_NAME: ${{ github.event.inputs.store_name || github.event.client_payload.store_name }}
+        USER_APP_NAME: ${{ github.event.inputs.user_app_name || github.event.client_payload.user_app_name }}
+        DELIVERY_APP_NAME: ${{ github.event.inputs.delivery_app_name || github.event.client_payload.delivery_app_name }}
+        STORE_APP_NAME: ${{ github.event.inputs.store_app_name || github.event.client_payload.store_app_name }}
         ICON_URL: ${{ github.event.inputs.icon_url || github.event.client_payload.icon_url }}
       run: |
-        python white_label_factory.py "$STORE_ID" "$STORE_NAME" "$ICON_URL"
+        python white_label_factory.py "$STORE_ID" "$STORE_NAME" "$ICON_URL" "$USER_APP_NAME" "$DELIVERY_APP_NAME" "$STORE_APP_NAME"
 
     - name: Upload APKs to Artifacts (Backup)
       uses: actions/upload-artifact@v4

@@ -20,6 +20,9 @@ class GitHubRepository @Inject constructor(
             val payload = mapOf(
                 "store_id" to store.id,
                 "store_name" to store.name,
+                "user_app_name" to store.userAppName.ifBlank { store.name },
+                "delivery_app_name" to store.deliveryAppName.ifBlank { "Delivery ${store.name}" },
+                "store_app_name" to store.storeAppName.ifBlank { "Store Manager ${store.name}" },
                 "icon_url" to store.userAppIconUrl
             )
             val response = api.triggerBuild(

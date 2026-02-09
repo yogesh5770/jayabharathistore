@@ -33,10 +33,10 @@ def init_firebase():
         print(f"ERROR: Failed to initialize Firebase: {e}")
         return None, None
 
-def update_app_branding(app_name, icon_url):
-    print(f"--- Modifying source code for: {app_name} ---")
-    
-    # 1. Update strings.xml
+def update_app_name(app_name):
+    if not app_name:
+        return
+    print(f"--- Updating app_name to: {app_name} ---")
     if os.path.exists(STRINGS_PATH):
         with open(STRINGS_PATH, "r", encoding="utf-8") as f:
             content = f.read()
@@ -46,48 +46,21 @@ def update_app_branding(app_name, icon_url):
         
         with open(STRINGS_PATH, "w", encoding="utf-8") as f:
             f.write(new_content)
-    
-    # 2. Update Icons (Download and replace)
-    if icon_url:
-        print(f"Downloading icon from: {icon_url}")
-        try:
-            response = requests.get(icon_url)
-            if response.status_code == 200:
-                img = Image.open(BytesIO(response.content))
-                
-                # Update across common densities
-                densities = {
-                    "mipmap-mdpi": 48,
-                    "mipmap-hdpi": 72,
-                    "mipmap-xhdpi": 96,
-                    "mipmap-xxhdpi": 144,
-                    "mipmap-xxxhdpi": 192
-                }
-                
-                for folder, size in densities.items():
-                    folder_path = os.path.join(RES_PATH, folder)
-                    if not os.path.exists(folder_path):
-                        os.makedirs(folder_path)
-                    
-                    resized_img = img.resize((size, size), Image.Resampling.LANCZOS)
-                    resized_img.save(os.path.join(folder_path, "ic_launcher.png"))
-                    resized_img.save(os.path.join(folder_path, "ic_launcher_round.png"))
-                
-                print("Icons replaced in all densities.")
-        except Exception as e:
-            print(f"Failed to update icons: {e}")
 
-def run_gradle_build():
+def run_gradle_build(user_app_name, delivery_app_name, store_app_name):
     print("--- Running Selected Gradle Builds (Customer, Store, Delivery) ---")
     gradle_cmd = "gradlew.bat" if os.name == 'nt' else "./gradlew"
     
-    # We only build the 3 essential apps to save time/memory
-    tasks = [":app:assembleCustomerDebug", ":app:assembleStoreDebug", ":app:assembleDeliveryDebug"]
+    tasks = [
+        (":app:assembleCustomerDebug", user_app_name),
+        (":app:assembleStoreDebug", store_app_name),
+        (":app:assembleDeliveryDebug", delivery_app_name)
+    ]
     
     try:
-        # Run tasks one by one to avoid OOM (Out Of Memory) on GitHub runners
-        for task in tasks:
-            print(f"Building task: {task}...")
+        for task, app_name in tasks:
+            print(f"Assigning name '{app_name}' for task: {task}...")
+            update_app_name(app_name)
             subprocess.run([gradle_cmd, task, "--no-daemon", "--stacktrace"], check=True)
         return True
     except subprocess.CalledProcessError as e:
@@ -175,18 +148,40 @@ def upload_and_update(store_id, db, bucket):
 def main():
     import sys
     if len(sys.argv) < 3:
-        print("Usage: python white_label_factory.py <store_id> <store_name> [icon_url]")
+        print("Usage: python white_label_factory.py <store_id> <store_name> [icon_url] [user_app_name] [delivery_app_name] [store_app_name]")
         return
 
     store_id = sys.argv[1]
     store_name = sys.argv[2]
     icon_url = sys.argv[3] if len(sys.argv) > 3 else None
+    
+    # Optional specific app names
+    user_app_name = sys.argv[4] if len(sys.argv) > 4 and sys.argv[4] else store_name
+    delivery_app_name = sys.argv[5] if len(sys.argv) > 5 and sys.argv[5] else f"Delivery {store_name}"
+    store_app_name = sys.argv[6] if len(sys.argv) > 6 and sys.argv[6] else f"Store Manager {store_name}"
 
     db, bucket = init_firebase()
     
-    update_app_branding(store_name, icon_url)
+    # Update branding (Icons are global for now, but we can specialize later if needed)
+    # We update icons first
+    if icon_url:
+        print(f"Downloading icon from: {icon_url}")
+        try:
+            response = requests.get(icon_url)
+            if response.status_code == 200:
+                img = Image.open(BytesIO(response.content))
+                densities = {"mipmap-mdpi": 48, "mipmap-hdpi": 72, "mipmap-xhdpi": 96, "mipmap-xxhdpi": 144, "mipmap-xxxhdpi": 192}
+                for folder, size in densities.items():
+                    folder_path = os.path.join(RES_PATH, folder)
+                    if not os.path.exists(folder_path): os.makedirs(folder_path)
+                    resized_img = img.resize((size, size), Image.Resampling.LANCZOS)
+                    resized_img.save(os.path.join(folder_path, "ic_launcher.png"))
+                    resized_img.save(os.path.join(folder_path, "ic_launcher_round.png"))
+                print("Icons replaced.")
+        except Exception as e:
+            print(f"Failed to update icons: {e}")
     
-    if run_gradle_build():
+    if run_gradle_build(user_app_name, delivery_app_name, store_app_name):
         upload_and_update(store_id, db, bucket)
     else:
         if db:
