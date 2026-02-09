@@ -13,17 +13,25 @@ STRINGS_PATH = os.path.join(PROJECT_ROOT, "app/src/main/res/values/strings.xml")
 RES_PATH = os.path.join(PROJECT_ROOT, "app/src/main/res")
 
 def init_firebase():
+    print("--- Initializing Firebase Admin SDK ---")
     service_account_json = os.environ.get("FIREBASE_SERVICE_ACCOUNT")
     if not service_account_json:
-        print("FIREBASE_SERVICE_ACCOUNT not found in environment. Skipping Firebase updates.")
+        print("CRITICAL: FIREBASE_SERVICE_ACCOUNT not found in environment variables!")
+        print("Please add it to GitHub Secrets. Skipping Firestore updates.")
         return None, None
     
-    cred_dict = json.loads(service_account_json)
-    cred = credentials.Certificate(cred_dict)
-    firebase_admin.initialize_app(cred, {
-        'storageBucket': f"{cred_dict['project_id']}.appspot.com"
-    })
-    return firestore.client(), storage.bucket()
+    try:
+        cred_dict = json.loads(service_account_json)
+        print(f"Service account found for project: {cred_dict.get('project_id')}")
+        cred = credentials.Certificate(cred_dict)
+        firebase_admin.initialize_app(cred, {
+            'storageBucket': f"{cred_dict['project_id']}.appspot.com"
+        })
+        print("Firebase Admin SDK initialized successfully.")
+        return firestore.client(), storage.bucket()
+    except Exception as e:
+        print(f"ERROR: Failed to initialize Firebase: {e}")
+        return None, None
 
 def update_app_branding(app_name, icon_url):
     print(f"--- Modifying source code for: {app_name} ---")
@@ -147,16 +155,20 @@ def upload_and_update(store_id, db, bucket):
                 if upload_resp.status_code == 201:
                     download_url = upload_resp.json()["browser_download_url"]
                     updates[field] = download_url
-                    print(f"Uploaded {flavor} to GitHub: {download_url}")
+                    print(f"SUCCESS: Uploaded {flavor} to GitHub: {download_url}")
                 else:
-                    print(f"Failed to upload {flavor}: {upload_resp.text}")
+                    print(f"FAILED: Could not upload {flavor} to GitHub. Status: {upload_resp.status_code}")
+                    print(f"Response: {upload_resp.text}")
 
         if db:
+            print(f"Updating Firestore document: {store_id}...")
             db.collection("stores").document(store_id).update(updates)
-            print("Firestore updated with GitHub download links.")
+            print("SUCCESS: Firestore updated with GitHub download links.")
+        else:
+            print("WARNING: Firestore client not initialized. Skipping DB update.")
             
     except Exception as e:
-        print(f"Error during GitHub upload: {e}")
+        print(f"CRITICAL ERROR during GitHub upload or Firestore update: {e}")
 
 def main():
     import sys
