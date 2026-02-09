@@ -834,14 +834,6 @@ fun ProductCardModern(
                         overflow = TextOverflow.Ellipsis,
                         color = TextPrimary
                     )
-
-                    Spacer(modifier = Modifier.height(4.dp))
-                    
-                    Text(
-                        text = product.unit,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = TextSecondary
-                    )
                 }
                 
                 Row(
