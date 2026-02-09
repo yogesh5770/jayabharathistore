@@ -12,6 +12,7 @@ interface GitHubApi {
         @Path("owner") owner: String,
         @Path("repo") repo: String,
         @Header("Authorization") token: String,
+        @Header("Accept") accept: String = "application/vnd.github.v3+json",
         @Body request: GitHubDispatchRequest
     ): Response<Unit>
 }
