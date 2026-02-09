@@ -175,6 +175,7 @@ fun StoreVerificationCard(
             }
         }
     }
+}
 
 
 @Composable
