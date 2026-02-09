@@ -48,6 +48,13 @@ class StoreOnboardingViewModel @Inject constructor(
                 _currentUser.value = user
                 storeJob?.cancel()
                 if (user != null) {
+                    // Update FCM Token
+                    com.google.firebase.messaging.FirebaseMessaging.getInstance().token.addOnSuccessListener { token ->
+                        viewModelScope.launch {
+                            userRepository.updateUserToken(user.uid, token)
+                        }
+                    }
+
                     storeJob = launch {
                         storeRepository.getStoreByOwnerIdRealtime(user.uid).collect { store ->
                             _existingStore.value = store

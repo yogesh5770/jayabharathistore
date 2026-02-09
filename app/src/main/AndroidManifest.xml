@@ -12,6 +12,7 @@
     <!-- Required for Contact Injection (Workaround for Name Masking) -->
     <uses-permission android:name="android.permission.READ_CONTACTS" />
     <uses-permission android:name="android.permission.WRITE_CONTACTS" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
         android:name=".JayabharathiApp"

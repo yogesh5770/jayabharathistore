@@ -105,6 +105,14 @@ class UserRepository @Inject constructor(
     suspend fun approveUser(userId: String) {
         usersCollection.document(userId).update("approvalStatus", "APPROVED").await()
     }
+
+    suspend fun updateUserToken(userId: String, token: String) {
+        try {
+            usersCollection.document(userId).update("fcmToken", token).await()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
     fun observeUser(userId: String): kotlinx.coroutines.flow.Flow<User?> = kotlinx.coroutines.flow.callbackFlow {
         val listener = usersCollection.document(userId).addSnapshotListener { snapshot, error ->
             if (error != null) {

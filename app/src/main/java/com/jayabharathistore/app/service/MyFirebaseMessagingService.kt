@@ -13,8 +13,22 @@ import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import com.jayabharathistore.app.MainActivity
 import com.jayabharathistore.app.R
+import com.google.firebase.auth.FirebaseAuth
+import com.jayabharathistore.app.data.repository.UserRepository
+import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import javax.inject.Inject
 
+@AndroidEntryPoint
 class MyFirebaseMessagingService : FirebaseMessagingService() {
+
+    @Inject
+    lateinit var userRepository: UserRepository
+
+    @Inject
+    lateinit var auth: FirebaseAuth
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
         super.onMessageReceived(remoteMessage)
@@ -208,6 +222,12 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
     }
 
     override fun onNewToken(token: String) {
-        // Send token to server if needed
+        super.onNewToken(token)
+        val user = auth.currentUser
+        if (user != null) {
+            CoroutineScope(Dispatchers.IO).launch {
+                userRepository.updateUserToken(user.uid, token)
+            }
+        }
     }
 }
