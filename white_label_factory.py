@@ -70,13 +70,23 @@ def update_app_branding(app_name, icon_url):
             print(f"Failed to update icons: {e}")
 
 def run_gradle_build():
-    print("--- Running Gradle Build (assembleDebug) ---")
+    print("--- Running Selected Gradle Builds (Customer, Store, Delivery) ---")
     gradle_cmd = "gradlew.bat" if os.name == 'nt' else "./gradlew"
+    
+    # We only build the 3 essential apps to save time/memory
+    tasks = [":app:assembleCustomerDebug", ":app:assembleStoreDebug", ":app:assembleDeliveryDebug"]
+    
     try:
-        subprocess.run([gradle_cmd, "assembleDebug"], check=True)
+        # Run tasks one by one to avoid OOM (Out Of Memory) on GitHub runners
+        for task in tasks:
+            print(f"Building task: {task}...")
+            subprocess.run([gradle_cmd, task, "--no-daemon", "--stacktrace"], check=True)
         return True
+    except subprocess.CalledProcessError as e:
+        print(f"Build failed during task execution. Error code: {e.returncode}")
+        return False
     except Exception as e:
-        print(f"Build failed: {e}")
+        print(f"Unexpected error during build: {e}")
         return False
 
 def upload_and_update(store_id, db, bucket):
