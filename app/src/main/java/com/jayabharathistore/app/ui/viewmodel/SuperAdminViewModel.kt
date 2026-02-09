@@ -45,7 +45,12 @@ class SuperAdminViewModel @Inject constructor(
             // 2. Trigger GitHub Build
             val store = storeRepository.getStoreById(storeId)
             if (store != null) {
-                githubRepository.triggerBuild(store)
+                val success = githubRepository.triggerBuild(store)
+                if (!success) {
+                    storeRepository.updateStoreStatus(storeId, "TRIGGER_FAILED")
+                }
+            } else {
+                 storeRepository.updateStoreStatus(storeId, "TRIGGER_FAILED")
             }
         }
     }

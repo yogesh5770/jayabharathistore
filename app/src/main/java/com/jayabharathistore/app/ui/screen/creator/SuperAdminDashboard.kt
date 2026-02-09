@@ -131,9 +131,12 @@ fun StoreVerificationCard(
 
             Spacer(Modifier.height(16.dp))
             
-            if (store.approvalStatus == "PENDING") {
+            if (store.approvalStatus == "PENDING" || store.approvalStatus == "TRIGGER_FAILED") {
                 Divider(modifier = Modifier.padding(vertical = 12.dp), color = Neutral100)
                 
+                if (store.approvalStatus == "TRIGGER_FAILED") {
+                    Text("Last build trigger failed. Please check network/token and try again.", color = ErrorRed, fontSize = 12.sp, modifier = Modifier.padding(bottom = 8.dp))
+                }
 
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     OutlinedButton(
@@ -149,7 +152,7 @@ fun StoreVerificationCard(
                         onClick = { viewModel.markForGeneration(store.id) },
                         modifier = Modifier.weight(1f),
                         colors = ButtonDefaults.buttonColors(containerColor = PrimaryPurple),
-                        enabled = store.approvalStatus == "PENDING"
+                        enabled = true
                     ) {
                         Icon(Icons.Default.CloudUpload, null, Modifier.size(16.dp))
                         Spacer(Modifier.width(4.dp))
