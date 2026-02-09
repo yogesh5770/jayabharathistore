@@ -3,7 +3,6 @@ package com.jayabharathistore.app.data.repository
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
-import com.jayabharathistore.app.data.SampleData
 import com.jayabharathistore.app.data.model.Product
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -21,7 +20,7 @@ class ProductRepository @Inject constructor(
 
     suspend fun getAllProducts(): List<Product> {
         return try {
-            val firebaseProducts = productsCollection
+            productsCollection
                 .orderBy("createdAt", Query.Direction.DESCENDING)
                 .get()
                 .await()
@@ -29,22 +28,14 @@ class ProductRepository @Inject constructor(
                 .mapNotNull { document ->
                     document.toObject(Product::class.java)?.copy(id = document.id)
                 }
-            
-            // If no products in Firebase, use sample data
-            if (firebaseProducts.isEmpty()) {
-                SampleData.getSampleProducts()
-            } else {
-                firebaseProducts
-            }
         } catch (e: Exception) {
-            // Fallback to sample data if Firebase fails
-            SampleData.getSampleProducts()
+            emptyList()
         }
     }
 
     suspend fun getProductsByCategory(category: String): List<Product> {
         return try {
-            val firebaseProducts = productsCollection
+            productsCollection
                 .whereEqualTo("category", category)
                 .orderBy("createdAt", Query.Direction.DESCENDING)
                 .get()
@@ -53,26 +44,15 @@ class ProductRepository @Inject constructor(
                 .mapNotNull { document ->
                     document.toObject(Product::class.java)?.copy(id = document.id)
                 }
-            
-            // If no products in Firebase for this category, use sample data
-            if (firebaseProducts.isEmpty()) {
-                SampleData.getSampleProducts().filter { 
-                    it.category.equals(category, ignoreCase = true) 
-                }
-            } else {
-                firebaseProducts
-            }
         } catch (e: Exception) {
-            // Fallback to sample data if Firebase fails
-            SampleData.getSampleProducts().filter { 
-                it.category.equals(category, ignoreCase = true) 
-            }
+            emptyList()
         }
     }
 
     suspend fun searchProducts(query: String): List<Product> {
         return try {
-            val firebaseProducts = productsCollection
+            // Note: This is a simple prefix search. For better search, use Algolia/Meilisearch
+            productsCollection
                 .whereGreaterThanOrEqualTo("name", query)
                 .whereLessThanOrEqualTo("name", query + "\uf8ff")
                 .limit(20)
@@ -82,20 +62,8 @@ class ProductRepository @Inject constructor(
                 .mapNotNull { document ->
                     document.toObject(Product::class.java)?.copy(id = document.id)
                 }
-            
-            // If no products in Firebase for search, use sample data
-            if (firebaseProducts.isEmpty()) {
-                SampleData.getSampleProducts().filter { 
-                    it.name.contains(query, ignoreCase = true) 
-                }
-            } else {
-                firebaseProducts
-            }
         } catch (e: Exception) {
-            // Fallback to sample data if Firebase fails
-            SampleData.getSampleProducts().filter { 
-                it.name.contains(query, ignoreCase = true) 
-            }
+            emptyList()
         }
     }
 
@@ -104,8 +72,7 @@ class ProductRepository @Inject constructor(
             val document = productsCollection.document(productId).get().await()
             document.toObject(Product::class.java)?.copy(id = document.id)
         } catch (e: Exception) {
-            // Fallback to sample data if Firebase fails
-            SampleData.getSampleProducts().find { it.id == productId }
+            null
         }
     }
 
@@ -158,7 +125,7 @@ class ProductRepository @Inject constructor(
 
     suspend fun getCategories(): List<String> {
         return try {
-            val firebaseCategories = productsCollection
+            productsCollection
                 .get()
                 .await()
                 .documents
@@ -166,22 +133,14 @@ class ProductRepository @Inject constructor(
                     document.getString("category")
                 }
                 .distinct()
-            
-            // If no categories in Firebase, use sample categories
-            if (firebaseCategories.isEmpty()) {
-                SampleData.getSampleCategories()
-            } else {
-                firebaseCategories
-            }
         } catch (e: Exception) {
-            // Fallback to sample data if Firebase fails
-            SampleData.getSampleCategories()
+            emptyList()
         }
     }
 
     suspend fun getAllProductsForOwner(): List<Product> {
         return try {
-            val firebaseProducts = productsCollection
+            productsCollection
                 .orderBy("createdAt", Query.Direction.DESCENDING)
                 .get()
                 .await()
@@ -189,14 +148,8 @@ class ProductRepository @Inject constructor(
                 .mapNotNull { document ->
                     document.toObject(Product::class.java)?.copy(id = document.id)
                 }
-            
-            if (firebaseProducts.isEmpty()) {
-                SampleData.getSampleProducts()
-            } else {
-                firebaseProducts
-            }
         } catch (e: Exception) {
-            SampleData.getSampleProducts()
+            emptyList()
         }
     }
 
