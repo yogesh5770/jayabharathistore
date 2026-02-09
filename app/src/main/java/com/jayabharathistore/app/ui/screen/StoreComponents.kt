@@ -157,7 +157,6 @@ fun AddProductDialog(
     var imageUri by remember { mutableStateOf<android.net.Uri?>(null) }
     var category by remember(product) { mutableStateOf(product?.category ?: "") }
     var stockQuantity by remember(product) { mutableStateOf(product?.stockQuantity?.toString() ?: "10") }
-    var unit by remember(product) { mutableStateOf(product?.unit ?: "kg") }
 
     val context = androidx.compose.ui.platform.LocalContext.current
     val launcher = androidx.activity.compose.rememberLauncherForActivityResult(
@@ -261,18 +260,6 @@ fun AddProductDialog(
                         focusedLabelColor = AccentOrange
                     )
                 )
-
-                OutlinedTextField(
-                    value = unit,
-                    onValueChange = { unit = it },
-                    label = { Text("Unit (e.g. kg, pkt, 500g)") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = AccentOrange,
-                        focusedLabelColor = AccentOrange
-                    )
-                )
                 
                 OutlinedTextField(
                     value = category,
@@ -323,7 +310,6 @@ fun AddProductDialog(
                         price = price.toDoubleOrNull() ?: 0.0,
                         category = category,
                         stockQuantity = stockQuantity.toIntOrNull() ?: 10,
-                        unit = unit,
                         inStock = if (product == null) true else product.inStock
                     )
                     onProductAdded(finalProduct, imageUri)

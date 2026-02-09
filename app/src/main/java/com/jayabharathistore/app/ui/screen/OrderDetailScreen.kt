@@ -703,11 +703,6 @@ fun OrderItemRow(item: OrderItem) {
                 color = TextPrimary,
                 maxLines = 2
             )
-            Text(
-                text = item.unit,
-                style = MaterialTheme.typography.labelSmall,
-                color = TextSecondary
-            )
         }
         
         Column(horizontalAlignment = Alignment.End) {

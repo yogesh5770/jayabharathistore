@@ -322,12 +322,6 @@ fun CartItemCard(
                     overflow = TextOverflow.Ellipsis
                 )
 
-                Text(
-                    text = cartItem.product.unit,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = TextSecondary
-                )
-
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(

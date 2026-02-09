@@ -679,7 +679,7 @@ fun ProductList(
                                 color = TextPrimary
                             )
                             Text(
-                                text = "₹${product.price.toInt()} / ${product.unit}",
+                                text = "₹${product.price.toInt()}",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = TextSecondary
                             )

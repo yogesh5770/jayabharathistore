@@ -185,16 +185,6 @@ fun ProductDetailContent(
                 color = TextPrimary
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Unit
-            Text(
-                text = product.unit,
-                style = MaterialTheme.typography.bodyLarge,
-                color = TextSecondary,
-                fontWeight = FontWeight.Medium
-            )
-
             Spacer(modifier = Modifier.height(24.dp))
 
             // Price & Quantity Row
