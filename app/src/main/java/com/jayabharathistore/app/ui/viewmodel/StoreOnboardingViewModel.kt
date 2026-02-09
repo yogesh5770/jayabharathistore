@@ -145,9 +145,9 @@ class StoreOnboardingViewModel @Inject constructor(
                 val storeIconUrl = storeAppIcon?.let { imageRepository.uploadProductImage(it) } ?: ""
                 val gstCertUrl = gstCert?.let { imageRepository.uploadProductImage(it) } ?: ""
 
-                // 2. Create Store Profile
                 val storeProfile = StoreProfile(
                     ownerId = user.uid,
+                    email = user.email ?: "",
                     name = storeName,
                     userAppName = userAppName,
                     deliveryAppName = deliveryAppName,

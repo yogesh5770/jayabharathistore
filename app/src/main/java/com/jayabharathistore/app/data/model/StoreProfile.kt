@@ -10,6 +10,9 @@ data class StoreProfile(
     
     @PropertyName("ownerId")
     val ownerId: String = "",
+
+    @PropertyName("email")
+    val email: String = "",
     
     @PropertyName("name")
     val name: String = "",
